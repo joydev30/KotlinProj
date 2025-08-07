@@ -6,12 +6,13 @@ import java.util.Scanner
 fun main() {
     val scanner = Scanner(System.`in`)
 
-    val url = "jdbc:sqlserver://localhost:1433;databaseName=KotlinAppDB;encrypt=true;trustServerCertificate=true"
+    val url = "jdbc:h2:file:./data/testdb"
     val user = "sa"
-    val password = "YourStrong@Passw0rd"
+    val password = ""
 
     DriverManager.getConnection(url, user, password).use { connection ->
-        println("Connected to SQL Server!")
+        println("Connected to H2 In-Memory Database")
+        createTables(connection)
 
         println("\n1. Create User\n2. Create Post")
         print("Enter your choice (1 or 2): ")
@@ -70,3 +71,25 @@ fun createPost(connection: Connection, scanner: Scanner) {
 
     println("Post created for user ID $userId.")
 }
+
+fun createTables(connection: Connection) {
+    val createUsersTableSQL = """
+        CREATE TABLE IF NOT EXISTS Users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            username VARCHAR(255) NOT NULL UNIQUE
+        )
+    """
+    val createPostsTableSQL = """
+        CREATE TABLE IF NOT EXISTS Posts (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT,
+            description VARCHAR(255),
+            image_url VARCHAR(255),
+            FOREIGN KEY (user_id) REFERENCES Users(id)
+        )
+    """
+    connection.createStatement().use { statement ->
+        statement.execute(createUsersTableSQL)
+        statement.execute(createPostsTableSQL)
+    }
+} 
